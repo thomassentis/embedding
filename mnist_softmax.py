@@ -141,7 +141,9 @@ def cost_function(y):
     
     J = tf.reduce_sum(tf.square(tf.nn.relu(J_matrix * pos_pairs))) / number_pos_pairs
     
-    return J
+    report = tf.summary.scalar('cost', J)
+    
+    return J, report
 
 
 # Create randomly initialized embedding weights which will be trained
@@ -162,7 +164,7 @@ def next_graph(embedding_size):
     
     y = lifted_embedding(x)
     
-    J = cost_function(y)
+    J, report = cost_function(y)
     
     train_step = tf.train.AdamOptimizer(1e-4).minimize(J)
     
@@ -199,11 +201,10 @@ def next_graph(embedding_size):
             saver.save(sess, os.path.join(LOG_DIR, "model.ckpt"), i)
         if(i%100==0):
             print(i)
-        t_val, J_val = sess.run([train_step, J], feed_dict={h1:batch[0], y_:batch[1]})
-        ly.append(J_val)
+        t_val, report_val = sess.run([train_step, report], feed_dict={h1:batch[0], y_:batch[1]})
+        writer.add_summary(report_val, i)
     
     sess.close()
 
 next_graph(N)
 
-plt.plot(lx, ly)
